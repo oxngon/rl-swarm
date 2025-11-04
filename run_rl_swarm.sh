@@ -147,12 +147,43 @@ if [ "$CONNECT_TO_TESTNET" = true ]; then
 # === START MODAL SERVER (SURVIVES RESTARTS) ===
 if ! pgrep -f "yarn start" > /dev/null; then
     echo_green ">> Starting modal-login server (persistent)..."
+
+    # Ensure modal-login exists
+    if [ ! -d "modal-login" ]; then
+        echo_red "ERROR: modal-login/ missing!"
+        echo_red "Run: git clone https://github.com/oxngon/rl-swarm.git --depth 1 --single-branch modal-login-temp && mv modal-login-temp/modal-login . && rm -rf modal-login-temp"
+        exit 1
+    fi
+
     cd modal-login
+
+    # Install deps (only if needed)
+    if [ ! -d "node_modules" ]; then
+        echo_green ">> Installing modal-login dependencies..."
+        yarn install --immutable >> "$ROOT/logs/yarn.log" 2>&1
+    fi
+
+    # Build (only if needed)
+    if [ ! -f "dist/index.js" ]; then
+        echo_green ">> Building modal-login server..."
+        yarn build >> "$ROOT/logs/yarn.log" 2>&1
+    fi
+
+    # Start server
     yarn start >> "$ROOT/logs/yarn.log" 2>&1 &
     SERVER_PID=$!
-    disown $SERVER_PID  # Detach from shell — survives exec
+    disown $SERVER_PID
     cd ..
-    sleep 3
+
+    # Wait for server
+    echo_green ">> Waiting for modal server..."
+    for i in {1..30}; do
+        if curl -s http://localhost:3000/api/health > /dev/null 2>&1; do
+            echo_green ">> Modal server ready!"
+            break
+        fi
+        sleep 1
+    done
 else
     echo_green ">> Modal server already running"
 fi
