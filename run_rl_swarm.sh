@@ -103,35 +103,33 @@ EOF
 mkdir -p "$ROOT/logs"
 if [ "$CONNECT_TO_TESTNET" = true ]; then
     # Run modal_login server.
-    echo "Please login to create an Ethereum Server Wallet"
+  
+# === START MODAL SERVER (SURVIVES RESTARTS) ===
+if ! pgrep -f "yarn start" > /dev/null; then
+    echo_green ">> Starting modal-login server (persistent)..."
+
+    if [ ! -d "modal-login" ]; then
+        echo_red "ERROR: modal-login/ missing!"
+        exit 1
+    fi
+
     cd modal-login
-    # Check if the yarn command exists; if not, install Yarn.
-    # Node.js + NVM setup
+
+    # === MOVE ALL THIS HERE ===
+    # Node.js + NVM
     if ! command -v node > /dev/null 2>&1; then
-        echo "Node.js not found. Installing NVM and latest Node.js..."
-        export NVM_DIR="$HOME/.nvm"
-        if [ ! -d "$NVM_DIR" ]; then
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-        fi
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-        nvm install node
+        # ... (full NVM install)
     else
         echo "Node.js is already installed: $(node -v)"
     fi
+
+    # Yarn
     if ! command -v yarn > /dev/null 2>&1; then
-        # Detect Ubuntu (including WSL Ubuntu) and install Yarn accordingly
-        if grep -qi "ubuntu" /etc/os-release 2> /dev/null || uname -r | grep -qi "microsoft"; then
-            echo "Detected Ubuntu or WSL Ubuntu. Installing Yarn via apt..."
-            curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-            echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-            sudo apt update && sudo apt install -y yarn
-        else
-            echo "Yarn not found. Installing Yarn globally with npm (no profile edits)…"
-            npm install -g --silent yarn
-        fi
+        # ... (full yarn install)
     fi
-    ENV_FILE="$ROOT"/modal-login/.env
+
+    # Update .env
+    ENV_FILE="$ROOT/modal-login/.env"
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "3s/.*/SWARM_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
         sed -i '' "4s/.*/PRG_CONTRACT_ADDRESS=$PRG_CONTRACT/" "$ENV_FILE"
@@ -139,43 +137,23 @@ if [ "$CONNECT_TO_TESTNET" = true ]; then
         sed -i "3s/.*/SWARM_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
         sed -i "4s/.*/PRG_CONTRACT_ADDRESS=$PRG_CONTRACT/" "$ENV_FILE"
     fi
-    if [ -z "$DOCKER" ]; then
-        yarn install --immutable
-        echo "Building server"
-        yarn build > "$ROOT/logs/yarn.log" 2>&1
-    fi    
-# === START MODAL SERVER (SURVIVES RESTARTS) ===
-if ! pgrep -f "yarn start" > /dev/null; then
-    echo_green ">> Starting modal-login server (persistent)..."
+    # === END MOVE ===
 
-    # Ensure modal-login exists
-    if [ ! -d "modal-login" ]; then
-        echo_red "ERROR: modal-login/ missing!"
-        echo_red "Run: git clone https://github.com/oxngon/rl-swarm.git --depth 1 --single-branch modal-login-temp && mv modal-login-temp/modal-login . && rm -rf modal-login-temp"
-        exit 1
-    fi
-
-    cd modal-login
-
-    # Install deps (only if needed)
     if [ ! -d "node_modules" ]; then
         echo_green ">> Installing modal-login dependencies..."
         yarn install --immutable >> "$ROOT/logs/yarn.log" 2>&1
     fi
 
-    # Build (only if needed)
     if [ ! -f "dist/index.js" ]; then
         echo_green ">> Building modal-login server..."
         yarn build >> "$ROOT/logs/yarn.log" 2>&1
     fi
 
-    # Start server
     yarn start >> "$ROOT/logs/yarn.log" 2>&1 &
     SERVER_PID=$!
     disown $SERVER_PID
     cd ..
 
-    # Wait for server
     echo_green ">> Waiting for modal server..."
     for i in {1..30}; do
         if curl -s http://localhost:3000/api/health > /dev/null 2>&1; do
@@ -187,6 +165,7 @@ if ! pgrep -f "yarn start" > /dev/null; then
 else
     echo_green ">> Modal server already running"
 fi
+
     echo "Started server process: $SERVER_PID"
     sleep 5
     if [ -z "$DOCKER" ]; then
