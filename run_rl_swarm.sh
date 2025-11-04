@@ -273,11 +273,16 @@ echo_green ">> Good luck in the swarm!"
 echo_blue ">> And remember to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
 
 # ------------------------------------------------------------------
-# THE ACTUAL TRAINER
+# THE ACTUAL TRAINER (ADDED FAULT TOLERANCE)
 # ------------------------------------------------------------------
+echo_green ">> Starting RL-Swarm trainer..."
+set +e  # Let trainer crash — we restart
 python -m rgym_exp.runner.swarm_launcher \
     --config-path "$ROOT/rgym_exp/config" \
     --config-name "rg-swarm.yaml"
+EXIT_CODE=$?
+set -e  # Safety back on
+echo "=== Trainer exited with code $EXIT_CODE – restarting in 5 s ==="
 
 # ------------------------------------------------------------------
 # AUTO-RESTART LOOP
