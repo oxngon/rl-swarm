@@ -143,9 +143,19 @@ if [ "$CONNECT_TO_TESTNET" = true ]; then
         yarn install --immutable
         echo "Building server"
         yarn build > "$ROOT/logs/yarn.log" 2>&1
-    fi
+    fi    
+# === START MODAL SERVER (SURVIVES RESTARTS) ===
+if ! pgrep -f "yarn start" > /dev/null; then
+    echo_green ">> Starting modal-login server (persistent)..."
+    cd modal-login
     yarn start >> "$ROOT/logs/yarn.log" 2>&1 &
     SERVER_PID=$!
+    disown $SERVER_PID  # Detach from shell — survives exec
+    cd ..
+    sleep 3
+else
+    echo_green ">> Modal server already running"
+fi
     echo "Started server process: $SERVER_PID"
     sleep 5
     if [ -z "$DOCKER" ]; then
