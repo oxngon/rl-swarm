@@ -186,7 +186,16 @@ pip install hivemind@git+https://github.com/gensyn-ai/hivemind@639c964a8019de631
 # === INSTALL CUSTOM RGYM_EXP AS PACKAGE ===
 echo_green ">> Installing custom rgym_exp module..."
 cd "$ROOT/rgym_exp"
-pip install -e .  # Editable install: makes rgym_exp importable
+
+if [ ! -f "pyproject.toml" ] && [ ! -f "setup.py" ]; then
+    echo_red "ERROR: pyproject.toml or setup.py missing in rgym_exp/"
+    exit 1
+fi
+
+pip install -e . || {
+    echo_red "Failed to install rgym_exp. Check pyproject.toml."
+    exit 1
+}
 cd "$ROOT"
 echo_green ">> Custom module installed!"
 if [ ! -d "$ROOT/configs" ]; then
