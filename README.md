@@ -1,12 +1,12 @@
 # RL Swarm
 
-This fork is improved **battle-tested Gensyn RL-Swarm node** with built in monitor and autorestart. It includes better memory management, improvements to avoid OOM errors, better handling of DHT errors due to peer poisoining and crashes due to socket conflicts.  
+This fork is improved **battle-tested Gensyn RL-Swarm node** with built in monitor and bulletproof autorestart. It includes better memory management, improvements to avoid OOM errors, better handling of DHT errors due to peer poisoining and crashes due to socket conflicts.  
 
 ### Improvements/changes
 
 | File | Feature | Benefit |
 |--------|--------|--------|
-| **run_rl_swarm.sh** | **bulletproof auto-restart loop** | node restarts automatically in case of crash |
+| **run_rl_swarm.sh** | **auto-restart loop** | node restarts automatically in case of crash |
 | **run_rl_swarm.sh** | **restart counter & logging** | easily check for crashes in `logs/restarts.log` |
 | **run_rl_swarm.sh** | **VRAM management** | fixes memory fragmentation |
 | **manager.py** | **DHT reconnect** | better stability and resilence during peer poisoning or network/p2pd drop|
@@ -14,7 +14,7 @@ This fork is improved **battle-tested Gensyn RL-Swarm node** with built in monit
 | **manager.py** | **silenced hivemind noise** | prevents tokenizer deadlocks, better node stability and resilence |
 | **rl-swarm.yaml** | **bfloat16 + gradient checkpoint** | memory optimisation |
 | **rl-swarm.yaml** | **smaller beam (50 -> 30)** | memory optimisation  |
-| **rl-swarm.yaml** | **minimal sampling/transplant** | memory optimisation  |
+| **rl-swarm.yaml** | **minimal sampling** | memory optimisation  |
 
 ### IMPORTANT
 Before running export these variables to answer questions (adjust accordingly) for auto-restart loop:
