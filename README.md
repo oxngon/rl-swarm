@@ -1,5 +1,32 @@
 # RL Swarm
 
+This fork is improved **battle-tested Gensyn RL-Swarm node** with built in monitor and autorestart. It includes better memory management, improvements to avoid OOM errors, better handling of DHT errors due to peer poisoining and crashes due to socket conflicts.  
+
+### Improvements/changes
+
+| File | Feature | Benefit |
+|--------|--------|--------|
+| **run_rl_swarm.sh** | **bulletproof auto-restart loop** | node restarts automatically in case of crash |
+| **run_rl_swarm.sh** | **restart counter & logging** | easily check for crashes in `logs/restarts.log` |
+| **run_rl_swarm.sh** | **VRAM management** | fixes memory fragmentation |
+| **manager.py** | **DHT reconnect** | better stability and resilence during peer poisoning or network/p2pd drop|
+| **manager.py** | **bootnodes reinjection** | skips round if unrecoverable, better node stability and resilence |
+| **manager.py** | **silenced hivemind noise** | prevents tokenizer deadlocks, better node stability and resilence |
+| **rl-swarm.yaml** | **bfloat16 + gradient checkpoint** | memory optimisation |
+| **rl-swarm.yaml** | **smaller beam (50 -> 30)** | memory optimisation  |
+| **rl-swarm.yaml** | **minimal sampling/transplant** | memory optimisation  |
+
+### IMPORTANT
+Before running export these variables to answer questions (adjust accordingly) for auto-restart loop:
+
+```
+export HUGGINGFACE_ACCESS_TOKEN="None"
+export MODEL_NAME="Gensyn/Qwen2.5-1.5B-Instruct"
+export PRG_GAME=true
+```
+
+## RL Swarm
+
 RL Swarm is a peer-to-peer system for reinforcement learning. It allows you to train models collaboratively with others in the swarm, leveraging their collective intelligence. It is open source and permissionless, meaning you can run it on a consumer laptop at home or on a powerful GPU in the cloud. You can also connect your model to the Gensyn Testnet to receive an on-chain identity that tracks your progress over time.
 
 Currently, we are running the [reasoning-gym](https://github.com/open-thought/reasoning-gym/tree/main) swarm on the Testnet. This swarm is designed to train models to solve a diverse set of reasoning tasks using the reasoning-gym dataset. The current list of default models includes:
