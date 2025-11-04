@@ -183,21 +183,20 @@ echo_green ">> Installing GenRL..."
 pip install gensyn-genrl==${GENRL_TAG}
 pip install reasoning-gym>=0.1.20
 pip install hivemind@git+https://github.com/gensyn-ai/hivemind@639c964a8019de63135a2594663b5bec8e5356dd
-# === INSTALL CUSTOM RGYM_EXP AS PACKAGE ===
-echo_green ">> Installing custom rgym_exp module..."
+# === INSTALL CUSTOM RGYM_EXP AS PACKAGE (FORCE REINSTALL) ===
+echo_green ">> Installing custom rgym_exp module (force reinstall)..."
 cd "$ROOT/rgym_exp"
 
-if [ ! -f "pyproject.toml" ] && [ ! -f "setup.py" ]; then
-    echo_red "ERROR: pyproject.toml or setup.py missing in rgym_exp/"
-    exit 1
-fi
+# Uninstall old version if exists
+pip uninstall -y rgym_exp 2>/dev/null || true
 
-pip install -e . || {
-    echo_red "Failed to install rgym_exp. Check pyproject.toml."
+# Reinstall from current source
+pip install -e . --no-deps || {
+    echo_red "Failed to install rgym_exp. Check pyproject.toml and manager.py"
     exit 1
 }
 cd "$ROOT"
-echo_green ">> Custom module installed!"
+echo_green ">> Custom module installed and up-to-date!"
 if [ ! -d "$ROOT/configs" ]; then
     mkdir "$ROOT/configs"
 fi
