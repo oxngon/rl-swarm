@@ -81,32 +81,6 @@ The easiest way to run RL Swarm is using Docker. This ensures a consistent setup
 git clone https://github.com/oxngon/rl-swarm
 ```
 
-#### 2. Install Docker
-
-Make sure you have Docker installed and the Docker daemon is running on your machine. To do that, follow [these instructions](https://docs.docker.com/get-started/get-docker/) according to your OS. Ensure you allot sufficient memory to the Docker containers. For example if using Docker Desktop, this can be done by going to Docker Desktop Settings > Resources > Advanced > Memory Limit, and increasing it to the maximum possible value.
-
-#### 3. Start the Swarm
-
-Run the following commands from the root of the repository.
-
-##### CPU support
-
- If you’re using a Mac or if your machine has CPU-only support:
-```sh
-docker-compose run --rm --build -Pit swarm-cpu
-```
-
-##### GPU support
-
-If you're using a machine with an officially supported GPU:
-```sh
-docker-compose run --rm --build -Pit swarm-gpu
-```
-
-##### Docker compose issue
-
-If `docker-compose` does not work when running the above commands, please try `docker compose` (no hyphen) instead. I.e. ` docker compose run --rm --build -Pit swarm-gpu`. This issue sometimes occurs on users running Ubuntu.
-
 ### Experimental (advanced) mode
 
 If you want to experiment with the [GenRL](https://github.com/gensyn-ai/genrl) library or the[configurable parameters](https://github.com/gensyn-ai/rl-swarm/blob/main/rgym_exp/config/rg-swarm.yaml ), we recommend you run RL Swarm via shell script:
