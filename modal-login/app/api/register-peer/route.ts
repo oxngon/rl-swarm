@@ -1,73 +1,36 @@
-import { getLatestApiKey, getUser } from "@/app/db";
-import { NextResponse } from "next/server";
-import { userOperationHandler } from "@/app/lib/userOperationHandler";
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs/promises";
+import path from "path";
 
-export async function POST(request: Request) {
-  const body: { orgId: string; peerId: string } = await request
-    .json()
-    .catch((err) => {
-      console.error(err);
-      return NextResponse.json(
-        { error: "bad request" },
-        {
-          status: 400,
-        },
-      );
-    });
-  if (!body.orgId) {
-    return NextResponse.json(
-      { error: "bad request" },
-      {
-        status: 400,
-      },
-    );
-  }
-  console.log(body.orgId);
-
+export async function POST(req: NextRequest) {
   try {
-    const user = getUser(body.orgId);
-    if (!user) {
-      return NextResponse.json(
-        { error: "user not found" },
-        {
-          status: 404,
-        },
-      );
-    }
-    const apiKey = getLatestApiKey(body.orgId);
-    if (!apiKey?.activated) {
-      return NextResponse.json(
-        { error: "api key not found" },
-        {
-          status: 500,
-        },
-      );
+    // Parse the request body
+    const body = await req.json();
+    const { peerId } = body;
+
+    if (!peerId) {
+      return NextResponse.json({ error: "peerId required" }, { status: 400 });
     }
 
-    const { accountAddress, privateKey, initCode, deferredActionDigest } =
-      apiKey;
+    // Read userData.json
+    const userDataPath = path.join(process.cwd(), "temp-data", "userData.json");
+    const userDataRaw = await fs.readFile(userDataPath, "utf-8");
+    const userData = JSON.parse(userDataRaw);
 
-    const userOperationResponse = await userOperationHandler({
-      accountAddress,
-      privateKey,
-      deferredActionDigest,
-      initCode,
-      functionName: "registerPeer",
-      args: [body.peerId],
-    });
+    // Register peer in userData (add to array or set)
+    if (!userData.peers) {
+      userData.peers = [];
+    }
+    if (!userData.peers.includes(peerId)) {
+      userData.peers.push(peerId);
+    }
 
-    return userOperationResponse;
-  } catch (err) {
-    console.error(err);
+    // Write back
+    await fs.writeFile(userDataPath, JSON.stringify(userData, null, 2));
 
-    return NextResponse.json(
-      {
-        error: "An unexpected error occurred",
-        original: err,
-      },
-      {
-        status: 500,
-      },
-    );
+    return NextResponse.json({ success: true, peerId });
+  } catch (error) {
+    console.error("register-peer error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
