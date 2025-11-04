@@ -10,8 +10,8 @@ This fork is **battle-tested Gensyn RL-Swarm node** with built in monitor and bu
 | **run_rl_swarm.sh** | **restart counter & logging** | easily check for crashes in `logs/restarts.log` |
 | **run_rl_swarm.sh** | **VRAM management** | fixes memory fragmentation |
 | **manager.py** | **DHT reconnect** | better stability and resilence during peer poisoning or network/p2pd drop|
-| **manager.py** | **bootnodes reinjection** | skips round if unrecoverable, better node stability and resilence |
-| **manager.py** | **silenced hivemind noise** | prevents tokenizer deadlocks, better node stability and resilence |
+| **manager.py** | **bootnodes reinjection** | skips round if unrecoverable, better node stability |
+| **manager.py** | **silenced hivemind noise** | prevents tokenizer deadlocks, better node resilence |
 | **rl-swarm.yaml** | **bfloat16 + gradient checkpoint** | memory optimisation |
 | **rl-swarm.yaml** | **smaller beam (50 -> 30)** | memory optimisation  |
 | **rl-swarm.yaml** | **minimal sampling** | memory optimisation  |
