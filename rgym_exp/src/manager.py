@@ -69,33 +69,30 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         # Register peer_id and get current round from the chain
         self.coordinator = coordinator
         # self.coordinator.register_peer(self.peer_id)
-        # === RETRY register_peer on Modal 500 (backend race) ===
-        import time
-        import requests
+        # Retry register_peer on Modal 500 (backend race)
+import time
+import requests  # Add if not already imported
 
-        registered = False
-        for attempt in range(5):  # 5 attempts, 5s apart = 25s max
-        try:
+registered = False
+for attempt in range(5):
+    try:
         self.coordinator.register_peer(self.peer_id)
         print(f"[SwarmGameManager] Peer registered successfully on attempt {attempt + 1}")
         registered = True
         break
-        except requests.exceptions.HTTPError as e:
+    except requests.exceptions.HTTPError as e:
         if e.response and e.response.status_code == 500 and "register-peer" in str(e):
             print(f"[SwarmGameManager] 500 on /api/register-peer (attempt {attempt + 1}/5) — retrying in 5s...")
             time.sleep(5)
         else:
             print(f"[SwarmGameManager] Non-500 error during register_peer: {e}")
             raise
-            except Exception as e:
+    except Exception as e:
         print(f"[SwarmGameManager] Unexpected error during register_peer: {e}")
         raise
 
-            if not registered:
-         print("[SwarmGameManager] WARNING: Failed to register peer after 5 attempts — continuing in offline mode")
-        # Optional: self.offline_mode = True
-
-    
+if not registered:
+    print("[SwarmGameManager] WARNING: Failed to register peer after 5 attempts — continuing offline")
         round, _ = self.coordinator.get_round_and_stage()
         self.state.round = round
 
