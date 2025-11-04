@@ -16,6 +16,8 @@ This fork is **battle-tested Gensyn RL-Swarm node** with built in monitor and bu
 | **rl-swarm.yaml** | **smaller beam (50 -> 30)** | memory optimisation  |
 | **rl-swarm.yaml** | **minimal sampling** | memory optimisation  |
 
+(Feel free to use only selected parts/files for your own node setup)
+
 ### IMPORTANT
 Before running export these variables to answer questions (adjust accordingly) for auto-restart loop:
 
