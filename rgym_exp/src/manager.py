@@ -1,6 +1,7 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import time
+import requests
 from collections import defaultdict
 import subprocess
 import re
@@ -69,37 +70,32 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         # Register peer_id and get current round from the chain
         self.coordinator = coordinator
         # self.coordinator.register_peer(self.peer_id)
-        # Retry register_peer on Modal 500 (backend race)
-import time
-import requests  # Add if not already imported
 
-registered = False
-for attempt in range(5):
-    try:
-        self.coordinator.register_peer(self.peer_id)
-        print(f"[SwarmGameManager] Peer registered successfully on attempt {attempt + 1}")
-        registered = True
-        break
-    except requests.exceptions.HTTPError as e:
-        if e.response and e.response.status_code == 500 and "register-peer" in str(e):
-            print(f"[SwarmGameManager] 500 on /api/register-peer (attempt {attempt + 1}/5) — retrying in 5s...")
-            time.sleep(5)
-        else:
-            print(f"[SwarmGameManager] Non-500 error during register_peer: {e}")
-            raise
-    except Exception as e:
-        print(f"[SwarmGameManager] Unexpected error during register_peer: {e}")
-        raise
+        # === RETRY register_peer on Modal 500 (backend race) ===
+        registered = False
+        for attempt in range(5):
+            try:
+                self.coordinator.register_peer(self.peer_id)
+                print(f"[SwarmGameManager] Peer registered successfully on attempt {attempt + 1}")
+                registered = True
+                break
+            except requests.exceptions.HTTPError as e:
+                if e.response and e.response.status_code == 500 and "register-peer" in str(e):
+                    print(f"[SwarmGameManager] 500 on /api/register-peer (attempt {attempt + 1}/5) — retrying in 5s...")
+                    time.sleep(5)
+                else:
+                    print(f"[SwarmGameManager] Non-500 error during register_peer: {e}")
+                    raise
+            except Exception as e:
+                print(f"[SwarmGameManager] Unexpected error during register_peer: {e}")
+                raise
 
-if not registered:
-    print("[SwarmGameManager] WARNING: Failed to register peer after 5 attempts — continuing offline")
+        if not registered:
+            print("[SwarmGameManager] WARNING: Failed to register peer after 5 attempts — continuing offline")
+
         round, _ = self.coordinator.get_round_and_stage()
         self.state.round = round
-
-        self.communication.step_ = (
-            self.state.round
-        )  # initialize communication module to contract's round
-
+        self.communication.step_ = self.state.round  # initialize communication module to contract's round
         # enable push to HF if token was provided
         self.hf_token = hf_token
         if self.hf_token not in [None, "None"]:
