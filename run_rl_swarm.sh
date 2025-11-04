@@ -114,19 +114,33 @@ if ! pgrep -f "yarn start" > /dev/null; then
     fi
 
     cd modal-login
-
-    # === MOVE ALL THIS HERE ===
+    
     # Node.js + NVM
     if ! command -v node > /dev/null 2>&1; then
-        # ... (full NVM install)
+        echo "Node.js not found. Installing NVM and latest Node.js..."
+        export NVM_DIR="$HOME/.nvm"
+        if [ ! -d "$NVM_DIR" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        fi
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        nvm install node
     else
         echo "Node.js is already installed: $(node -v)"
-    fi
+    fi   # ← THIS WAS MISSING
 
     # Yarn
     if ! command -v yarn > /dev/null 2>&1; then
-        # ... (full yarn install)
-    fi
+        if grep -qi "ubuntu" /etc/os-release 2> /dev/null || uname -r | grep -qi "microsoft"; then
+            echo "Detected Ubuntu or WSL Ubuntu. Installing Yarn via apt..."
+            curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+            echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+            sudo apt update && sudo apt install -y yarn
+        else
+            echo "Yarn not found. Installing Yarn globally with npm..."
+            npm install -g --silent yarn
+        fi
+    fi   # ← This one is correct
 
     # Update .env
     ENV_FILE="$ROOT/modal-login/.env"
@@ -137,7 +151,6 @@ if ! pgrep -f "yarn start" > /dev/null; then
         sed -i "3s/.*/SWARM_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
         sed -i "4s/.*/PRG_CONTRACT_ADDRESS=$PRG_CONTRACT/" "$ENV_FILE"
     fi
-    # === END MOVE ===
 
     if [ ! -d "node_modules" ]; then
         echo_green ">> Installing modal-login dependencies..."
