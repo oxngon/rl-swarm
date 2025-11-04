@@ -77,8 +77,8 @@ The easiest way to run RL Swarm is using Docker. This ensures a consistent setup
 
 #### 1. Clone this repo
 
-```sh
-git clone https://github.com/oxngon/rl-swarm
+```
+git clone https://github.com/oxngon/rl-swarm && cd rl-swarm
 ```
 
 ### Experimental (advanced) mode
@@ -97,7 +97,7 @@ To learn more about experimental mode, check out our [getting started guide](htt
 2. Click 'login'.
 3. Login with your preferred method.
 
-### Huggingface
+### Huggingface (recommend 'NONE')
 
 If you would like to upload your model to Hugging Face, enter your Hugging Face access token when prompted. You can generate one from your Hugging Face account, under [Access Tokens](https://huggingface.co/docs/hub/en/security-tokens).
 
