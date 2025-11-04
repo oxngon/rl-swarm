@@ -169,7 +169,7 @@ if ! pgrep -f "yarn start" > /dev/null; then
 
     echo_green ">> Waiting for modal server..."
     for i in {1..30}; do
-        if curl -s http://localhost:3000/api/health > /dev/null 2>&1; do
+        if curl -s http://localhost:3000/api/health > /dev/null 2>&1; then
             echo_green ">> Modal server ready!"
             break
         fi
