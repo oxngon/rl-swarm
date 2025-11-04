@@ -103,19 +103,10 @@ EOF
 mkdir -p "$ROOT/logs"
 if [ "$CONNECT_TO_TESTNET" = true ]; then
     # Run modal_login server.
-  
-# === START MODAL SERVER (SURVIVES RESTARTS) ===
-if ! pgrep -f "yarn start" > /dev/null; then
-    echo_green ">> Starting modal-login server (persistent)..."
-
-    if [ ! -d "modal-login" ]; then
-        echo_red "ERROR: modal-login/ missing!"
-        exit 1
-    fi
-
+    echo "Please login to create an Ethereum Server Wallet"
     cd modal-login
-    
-    # Node.js + NVM
+    # Check if the yarn command exists; if not, install Yarn.
+    # Node.js + NVM setup
     if ! command -v node > /dev/null 2>&1; then
         echo "Node.js not found. Installing NVM and latest Node.js..."
         export NVM_DIR="$HOME/.nvm"
@@ -127,23 +118,20 @@ if ! pgrep -f "yarn start" > /dev/null; then
         nvm install node
     else
         echo "Node.js is already installed: $(node -v)"
-    fi   # ← THIS WAS MISSING
-
-    # Yarn
+    fi
     if ! command -v yarn > /dev/null 2>&1; then
+        # Detect Ubuntu (including WSL Ubuntu) and install Yarn accordingly
         if grep -qi "ubuntu" /etc/os-release 2> /dev/null || uname -r | grep -qi "microsoft"; then
             echo "Detected Ubuntu or WSL Ubuntu. Installing Yarn via apt..."
             curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
             echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
             sudo apt update && sudo apt install -y yarn
         else
-            echo "Yarn not found. Installing Yarn globally with npm..."
+            echo "Yarn not found. Installing Yarn globally with npm (no profile edits)…"
             npm install -g --silent yarn
         fi
-    fi   # ← This one is correct
-
-    # Update .env
-    ENV_FILE="$ROOT/modal-login/.env"
+    fi
+    ENV_FILE="$ROOT"/modal-login/.env
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "3s/.*/SWARM_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
         sed -i '' "4s/.*/PRG_CONTRACT_ADDRESS=$PRG_CONTRACT/" "$ENV_FILE"
@@ -151,34 +139,13 @@ if ! pgrep -f "yarn start" > /dev/null; then
         sed -i "3s/.*/SWARM_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
         sed -i "4s/.*/PRG_CONTRACT_ADDRESS=$PRG_CONTRACT/" "$ENV_FILE"
     fi
-
-    if [ ! -d "node_modules" ]; then
-        echo_green ">> Installing modal-login dependencies..."
-        yarn install --immutable >> "$ROOT/logs/yarn.log" 2>&1
+    if [ -z "$DOCKER" ]; then
+        yarn install --immutable
+        echo "Building server"
+        yarn build > "$ROOT/logs/yarn.log" 2>&1
     fi
-
-    if [ ! -f "dist/index.js" ]; then
-        echo_green ">> Building modal-login server..."
-        yarn build >> "$ROOT/logs/yarn.log" 2>&1
-    fi
-
     yarn start >> "$ROOT/logs/yarn.log" 2>&1 &
     SERVER_PID=$!
-    disown $SERVER_PID
-    cd ..
-
-    echo_green ">> Waiting for modal server..."
-    for i in {1..30}; do
-        if curl -s http://localhost:3000/api/health > /dev/null 2>&1; then
-            echo_green ">> Modal server ready!"
-            break
-        fi
-        sleep 1
-    done
-else
-    echo_green ">> Modal server already running"
-fi
-
     echo "Started server process: $SERVER_PID"
     sleep 5
     if [ -z "$DOCKER" ]; then
@@ -216,20 +183,6 @@ echo_green ">> Installing GenRL..."
 pip install gensyn-genrl==${GENRL_TAG}
 pip install reasoning-gym>=0.1.20
 pip install hivemind@git+https://github.com/gensyn-ai/hivemind@639c964a8019de63135a2594663b5bec8e5356dd
-# === INSTALL CUSTOM RGYM_EXP AS PACKAGE (FORCE REINSTALL) ===
-echo_green ">> Installing custom rgym_exp module (force reinstall)..."
-cd "$ROOT/rgym_exp"
-
-# Uninstall old version if exists
-pip uninstall -y rgym_exp 2>/dev/null || true
-
-# Reinstall from current source
-pip install -e . --no-deps || {
-    echo_red "Failed to install rgym_exp. Check pyproject.toml and manager.py"
-    exit 1
-}
-cd "$ROOT"
-echo_green ">> Custom module installed and up-to-date!"
 if [ ! -d "$ROOT/configs" ]; then
     mkdir "$ROOT/configs"
 fi
@@ -306,16 +259,11 @@ echo_green ">> Good luck in the swarm!"
 echo_blue ">> And remember to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
 
 # ------------------------------------------------------------------
-# THE ACTUAL TRAINER (ADDED FAULT TOLERANCE)
+# THE ACTUAL TRAINER
 # ------------------------------------------------------------------
-echo_green ">> Starting RL-Swarm trainer..."
-set +e  # Let trainer crash — we restart
 python -m rgym_exp.runner.swarm_launcher \
     --config-path "$ROOT/rgym_exp/config" \
     --config-name "rg-swarm.yaml"
-EXIT_CODE=$?
-set -e  # Safety back on
-echo "=== Trainer exited with code $EXIT_CODE – restarting in 5 s ==="
 
 # ------------------------------------------------------------------
 # AUTO-RESTART LOOP
